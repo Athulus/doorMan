@@ -64,7 +64,6 @@ def setP5Flag(p):
                 FLAG6 = 1
                 FLAG4 = 0
 
-
 def pubStatus(c):
     global PUB_FLAG
     global PUB_FEED
@@ -75,8 +74,6 @@ def pubStatus(c):
         print('publish unlocked')
         c.publish(PUB_FEED, b'1')
     PUB_FLAG = False
-
-
 def lockStatus_cb(topic, msg):
     global LOCK_FLAG
     print(msg)
@@ -103,7 +100,6 @@ def lock():
     MOTOR_DONE = False
     LOCK_FLAG = True
 
-
 def unlock():
     global LOCK_FLAG
     global MOTOR_DONE
@@ -121,20 +117,17 @@ def unlock():
     MOTOR_DONE = False
     LOCK_FLAG = False
 
-
 def motorForward(p1, p2, pEN):
     pEN.value(0)
     p1.value(1)
     p2.value(0)
     pEN.value(1)
 
-
 def motorBackward(p1, p2, pEN):
     pEN.value(0)
     p1.value(0)
     p2.value(1)
     pEN.value(1)
-
 
 def motorStop(p1, p2, pEN):
     pEN.value(0)
@@ -159,10 +152,18 @@ def init(myMqttClient, feedURL, username, key, feed):
     C.set_callback(lockStatus_cb)
     C.connect()
     C.subscribe(feed)
-
     P5.irq(handler=setP5Flag, trigger=Pin.IRQ_FALLING)
     P4.irq(handler=setP4Flag, trigger=Pin.IRQ_FALLING)
 
+def calibrate(dir):
+    if dir == 'f':
+        motorForward(P1A, P2A, P_EN)
+        time.sleep(0.25)
+        motorStop(P1A, P2A, P_EN)
+    else:
+        motorBackward(P1A, P2A, P_EN)
+        time.sleep(0.25)
+        motorStop(P1A, P2A, P_EN)
 
 def run():
     global C
@@ -171,3 +172,4 @@ def run():
         C.check_msg()
         if PUB_FLAG:
             pubStatus(C)
+            
