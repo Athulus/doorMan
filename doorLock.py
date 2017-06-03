@@ -1,162 +1,173 @@
+import time
 import urequests
 from machine import Pin
 import machine
 from umqtt.simple import MQTTClient
-import time
 
-flag4 = None
-flag5 = None
-flag6 = None
-lockFlag = False
-pubFlag = False
-motorDone = False
-p4 = Pin(4, Pin.IN, Pin.PULL_UP)
-p5 = Pin(5, Pin.IN, Pin.PULL_UP)
-p1A = Pin(12, Pin.OUT)
-p2A = Pin(13, Pin.OUT)
-pEN = Pin(14, Pin.OUT)
-c = None
-pubFeed = None
+FLAG4 = None
+FLAG5 = None
+FLAG6 = None
+LOCK_FLAG = False
+PUB_FLAG = False
+MOTOR_DONE = False
+P4 = Pin(4, Pin.IN, Pin.PULL_UP)
+P5 = Pin(5, Pin.IN, Pin.PULL_UP)
+P1A = Pin(12, Pin.OUT)
+P2A = Pin(13, Pin.OUT)
+P_EN = Pin(14, Pin.OUT)
+C = None
+PUB_FEED = None
+
 
 def setP4Flag(p):
-    global flag4
-    global flag5
-    global flag6
-    global lockFlag
-    global pubFlag
-    global motorDone
+    global FLAG4
+    global FLAG5
+    global FLAG6
+    global LOCK_FLAG
+    global PUB_FLAG
+    global MOTOR_DONE
     if p.value() == 0:
-        flag4 = 1
-        if flag5 == 1:
-            if flag6 == 1:
+        FLAG4 = 1
+        if FLAG5 == 1:
+            if FLAG6 == 1:
                 print('door unlocking manually')
-                lockFlag = False
-                flag4 = 0
-                flag5 = 0
-                flag6 = 0
-                pubFlag = True
-                motorDone = True
+                LOCK_FLAG = False
+                FLAG4 = 0
+                FLAG5 = 0
+                FLAG6 = 0
+                PUB_FLAG = True
+                MOTOR_DONE = True
             else:
-                flag6 = 1
-                flag5 = 0
+                FLAG6 = 1
+                FLAG5 = 0
+
 
 def setP5Flag(p):
-    global flag4
-    global flag5
-    global flag6
-    global lockFlag
-    global pubFlag
-    global motorDone
+    global FLAG4
+    global FLAG5
+    global FLAG6
+    global LOCK_FLAG
+    global PUB_FLAG
+    global MOTOR_DONE
     if p.value() == 0:
-        flag5 = 1
-        if flag4 == 1:
-            if flag6 == 1:
+        FLAG5 = 1
+        if FLAG4 == 1:
+            if FLAG6 == 1:
                 print('door locking manually')
-                lockFlag = True
-                flag4 = 0
-                flag5 = 0
-                flag6 = 0
-                pubFlag = True
-                motorDone = True
+                LOCK_FLAG = True
+                FLAG4 = 0
+                FLAG5 = 0
+                FLAG6 = 0
+                PUB_FLAG = True
+                MOTOR_DONE = True
             else:
-                flag6 = 1
-                flag4 = 0
+                FLAG6 = 1
+                FLAG4 = 0
+
 
 def pubStatus(c):
-    global pubFlag
-    global pubFeed
-    if lockFlag:
+    global PUB_FLAG
+    global PUB_FEED
+    if LOCK_FLAG:
         print('publish locked')
-        c.publish(pubFeed,b'0')
-    if not lockFlag:
+        c.publish(PUB_FEED, b'0')
+    if not LOCK_FLAG:
         print('publish unlocked')
-        c.publish(pubFeed,b'1')
-    pubFlag = False
+        c.publish(PUB_FEED, b'1')
+    PUB_FLAG = False
+
 
 def lockStatus_cb(topic, msg):
-    global lockFlag
+    global LOCK_FLAG
     print(msg)
-    if lockFlag and msg ==b'1':
+    if LOCK_FLAG and msg == b'1':
         unlock()
-    if not lockFlag and msg ==b'0':
+    if not LOCK_FLAG and msg == b'0':
         lock()
 
+
 def lock():
-    global lockFlag
-    global motorDone
-    global p1A
-    global p2A
-    global pEN
+    global LOCK_FLAG
+    global MOTOR_DONE
+    global P1A
+    global P2A
+    global P_EN
     print('locking')
-    #start the motor for lock
-    motorForward(p1A,p2A,pEN)
-    while not motorDone:
+    # start the motor for lock
+    motorForward(P1A, P2A, P_EN)
+    while not MOTOR_DONE:
         pass
         # do nothing here, just waiting for intterupt
-    #stop motor
-    motorStop(p1A,p2A,pEN)
-    motorDone = False
-    lockFlag = True
+    # stop motor
+    motorStop(P1A, P2A, P_EN)
+    MOTOR_DONE = False
+    LOCK_FLAG = True
+
 
 def unlock():
-    global lockFlag
-    global motorDone
-    global p1A
-    global p2A
-    global pEN
+    global LOCK_FLAG
+    global MOTOR_DONE
+    global P1A
+    global P2A
+    global P_EN
     print('unlocking')
-    #start the motor for unlock
-    motorBackward(p1A,p2A,pEN)
-    while not motorDone:
+    # start the motor for unlock
+    motorBackward(P1A, P2A, P_EN)
+    while not MOTOR_DONE:
         pass
         # do nothing here, just waiting for intterupt
-    #stop motor
-    motorStop(p1A,p2A,pEN)
-    motorDone = False
-    lockFlag = False
+    # stop motor
+    motorStop(P1A, P2A, P_EN)
+    MOTOR_DONE = False
+    LOCK_FLAG = False
 
-def motorForward(p1,p2, pEN):
+
+def motorForward(p1, p2, pEN):
     pEN.value(0)
     p1.value(1)
     p2.value(0)
     pEN.value(1)
 
-def motorBackward(p1,p2, pEN):
+
+def motorBackward(p1, p2, pEN):
     pEN.value(0)
     p1.value(0)
     p2.value(1)
     pEN.value(1)
 
-def motorStop(p1,p2, pEN):
+
+def motorStop(p1, p2, pEN):
     pEN.value(0)
     p1.value(0)
     p2.value(0)
 
+
 def init(myMqttClient, feedURL, username, key, feed):
-    global c
-    global p5, p4
-    global pubFeed
-    pubFeed = feed
+    global C
+    global P5, P4
+    global PUB_FEED
+    PUB_FEED = feed
     print('motor test')
-    motorForward(p1A,p2A,pEN)
+    motorForward(P1A, P2A, P_EN)
     time.sleep(0.5)
-    motorBackward(p1A,p2A,pEN)
+    motorBackward(P1A, P2A, P_EN)
     time.sleep(0.5)
-    motorStop(p1A,p2A,pEN)
+    motorStop(P1A, P2A, P_EN)
     print('end motor test')
 
-    c = MQTTClient(myMqttClient, feedURL, 0, username, key)
-    c.set_callback(lockStatus_cb)
-    c.connect()
-    c.subscribe(feed)
+    C = MQTTClient(myMqttClient, feedURL, 0, username, key)
+    C.set_callback(lockStatus_cb)
+    C.connect()
+    C.subscribe(feed)
 
-    p5.irq(handler=setP5Flag, trigger=Pin.IRQ_FALLING)
-    p4.irq(handler=setP4Flag, trigger=Pin.IRQ_FALLING)
+    P5.irq(handler=setP5Flag, trigger=Pin.IRQ_FALLING)
+    P4.irq(handler=setP4Flag, trigger=Pin.IRQ_FALLING)
+
 
 def run():
-    global c
-    global pubFlag
-    while(42):
-        c.check_msg()
-        if pubFlag:
-            pubStatus(c)
+    global C
+    global PUB_FLAG
+    while 42:
+        C.check_msg()
+        if PUB_FLAG:
+            pubStatus(C)
