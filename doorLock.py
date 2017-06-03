@@ -6,6 +6,7 @@ import time
 
 flag4 = None
 flag5 = None
+flag6 = None
 lockFlag = False
 pubFlag = False
 motorDone = False
@@ -20,34 +21,46 @@ pubFeed = None
 def setP4Flag(p):
     global flag4
     global flag5
+    global flag6
     global lockFlag
     global pubFlag
     global motorDone
     if p.value() == 0:
         flag4 = 1
         if flag5 == 1:
-            print('door unlocking manually')
-            lockFlag = False
-            flag4 = 0
-            flag5 = 0
-            pubFlag = True
-            motorDone = True
+            if flag6 == 1:
+                print('door unlocking manually')
+                lockFlag = False
+                flag4 = 0
+                flag5 = 0
+                flag6 = 0
+                pubFlag = True
+                motorDone = True
+            else:
+                flag6 = 1
+                flag5 = 0
 
 def setP5Flag(p):
     global flag4
     global flag5
+    global flag6
     global lockFlag
     global pubFlag
     global motorDone
     if p.value() == 0:
         flag5 = 1
         if flag4 == 1:
-            print('door locking manually')
-            lockFlag = True
-            flag4 = 0
-            flag5 = 0
-            pubFlag = True
-            motorDone = True
+            if flag6 == 1:
+                print('door locking manually')
+                lockFlag = True
+                flag4 = 0
+                flag5 = 0
+                flag6 = 0
+                pubFlag = True
+                motorDone = True
+            else:
+                flag6 = 1
+                flag4 = 0
 
 def pubStatus(c):
     global pubFlag
